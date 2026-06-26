@@ -29,10 +29,15 @@ class SQLiteFTSSearcher:
         with get_db_conn() as conn:
             cursor = conn.cursor()
             try:
+                import re
+                # Extract alphanumeric words and join with OR to avoid strict phrase matching
+                words = re.findall(r'\w+', query)
+                fts_query = " OR ".join(words) if words else query
+                
                 # FTS5 MATCH query ordering by rank (relevance score)
                 cursor.execute(
                     "SELECT id FROM memories_fts WHERE text MATCH ? ORDER BY rank LIMIT ?",
-                    (query, limit)
+                    (fts_query, limit)
                 )
                 matching_ids = [row["id"] for row in cursor.fetchall()]
             except Exception:
