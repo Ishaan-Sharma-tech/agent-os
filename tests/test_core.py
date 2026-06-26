@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 from agent_os.core.config import AgentOSSettings, load_settings, DEFAULT_AGENTOS_DIR
 from agent_os.core.models import Event, AgentConfig, MemoryRecord
 from agent_os.core.events import EventBus
-from agent_os.core.permissions import Capability, check_permission, PermissionError
+from agent_os.core.permissions import Capability, check_permission
 from agent_os.core.workspace import Workspace
 
 

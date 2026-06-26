@@ -76,7 +76,7 @@ def check_permission(granted: List[Capability], required: Capability) -> bool:
     return False
 
 
-class PermissionError(Exception):
+class AgentOSPermissionError(Exception):
     """Raised when an agent does not have permission to execute an action or tool."""
     def __init__(self, required: Capability, agent_name: str):
         self.required = required
