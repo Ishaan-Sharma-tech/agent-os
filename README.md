@@ -1,198 +1,148 @@
 <div align="center">
 
-# 🧠 AgentOS
+<img src="https://img.shields.io/badge/AgentOS-Runtime_for_AI_Agents-000000?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxMCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIzIiBmaWxsPSIjZmZmIi8+PC9zdmc+" alt="AgentOS" />
+
+# AgentOS
 
 ### The Runtime for AI Agents
 
-**Keep your agent. Keep your framework. AgentOS adds the infrastructure.**
-
 Memory · Tools · Permissions · Observability · Scheduling · Pipelines · Studio
+
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Python](https://img.shields.io/badge/python-3.11+-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/downloads/)
 
 ---
 
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Status](https://img.shields.io/badge/status-building_in_public-orange.svg)]()
-
-[Getting Started](#-60-second-quickstart) · [Why AgentOS](#-why-agentos) · [Architecture](#-architecture) · [Roadmap](#-roadmap) · [Contributing](#-contributing)
+[Getting Started](#-getting-started) · [Core Concepts](#-core-concepts) · [Documentation](#-documentation) · [Architecture](#%EF%B8%8F-architecture) · [Contributing](#-contributing) · [License](#-license)
 
 </div>
 
 ---
 
-## What is AgentOS?
+## Overview
 
-AgentOS is an **open-source runtime layer for AI agents**. It's not another agent framework — it's the infrastructure that sits *underneath* any agent and provides everything it needs to be production-ready:
+AgentOS is an open-source runtime layer for AI agents. It provides the foundational infrastructure — memory, tools, permissions, observability, scheduling, pipelines, and a desktop studio — that every agent needs to be production-ready.
 
-- 🧠 **Memory** — Persistent memory that survives across sessions
-- 🔧 **Tools** — Extensible tool system with a dead-simple `@tool` decorator
-- 🔐 **Permissions** — Capability-based security (what can this agent do?)
-- 📊 **Observability** — Logs, metrics, token usage, execution history
-- ⏰ **Scheduling** — Cron jobs, intervals, event triggers
-- 🔗 **Pipelines** — DAG-based workflows with parallel execution
-- 👥 **Agent Teams** — Multi-agent collaboration out of the box
-- 🖥️ **Studio** — Desktop app to manage everything visually
-- 🔌 **Plugins** — Gmail, GitHub, Slack, Notion, and more
+AgentOS is not another agent framework. It does not replace LangGraph, CrewAI, AutoGen, or the OpenAI SDK. It works **alongside** them, providing the infrastructure layer underneath.
 
-Think of it this way: **AgentOS is for AI agents what Linux is for software applications.**
+```
+┌──────────────────────────────────────────────────┐
+│                YOUR APPLICATION                   │
+└──────────────────┬───────────────────────────────┘
+                   │
+┌──────────────────▼───────────────────────────────┐
+│           YOUR FRAMEWORK (optional)               │
+│     LangGraph · CrewAI · AutoGen · OpenAI SDK     │
+└──────────────────┬───────────────────────────────┘
+                   │
+╔══════════════════▼═══════════════════════════════╗
+║                 AgentOS Runtime                   ║
+║  Memory · Tools · Permissions · Observability     ║
+║  Scheduler · Pipelines · EventBus · Plugins       ║
+║  Knowledge Graph · Workspaces · Agent Teams       ║
+╚══════════════════════════════════════════════════╝
+```
 
 ---
 
-## ⚡ 60-Second Quickstart
+## ⚡ Getting Started
+
+### Installation
 
 ```bash
 pip install agent-os
-export OPENAI_API_KEY="sk-..."
 ```
+
+### Create Your First Agent
 
 ```python
 from agent_os import Agent
 
 agent = Agent("researcher")
-result = agent.run("What are the top AI trends in 2026?")
+result = agent.run("What are the latest breakthroughs in quantum computing?")
 print(result.text)
 ```
 
-**That's it.** Memory works. Tools are available. Logs are captured. Zero config. Zero server. Zero setup.
+No configuration files. No server to start. No database to set up. API keys are read from environment variables.
+
+```bash
+export OPENAI_API_KEY="sk-..."
+```
 
 ---
 
-## 🤔 Why AgentOS?
+## 📖 Core Concepts
 
-Every AI project rebuilds the same infrastructure:
+### Agents
 
-| What you need | Without AgentOS | With AgentOS |
-|---|---|---|
-| Memory | Build your own database layer | `agent.memory.search("...")` |
-| Tool execution | Write JSON schemas, handle errors | `@tool("Search web") def search(q): ...` |
-| Observability | Custom logging, hope for the best | Automatic. Every call logged |
-| Scheduling | Cron scripts, background workers | `Schedule(pipeline, cron="0 8 * * *")` |
-| Agent teams | Build orchestration from scratch | `Team([agent1, agent2], strategy="sequential")` |
-| Permissions | Nothing (pray it doesn't break things) | Capability-based, per-agent controls |
-| Management UI | Build a dashboard | AgentOS Studio (desktop app) |
-
-**AgentOS solves this once so you never rebuild it again.**
-
----
-
-## 🔌 Works With Your Existing Agent
-
-AgentOS doesn't ask you to rewrite anything. Bring your own agent:
-
-### Already have an agent? Enhance it in one line:
+An agent is an autonomous entity that can think, use tools, remember information, and collaborate with other agents.
 
 ```python
-from agent_os import enhance
+from agent_os import Agent
 
-# Your existing agent — raw OpenAI, LangChain, whatever
-class MyBot:
-    def run(self, task):
-        return openai.chat.completions.create(...)
-
-bot = enhance(MyBot(), memory=True, observe=True)
-bot.run("Analyze this data")
-# Now it has persistent memory, logging, and metrics — zero rewrite
+agent = Agent(
+    name="analyst",
+    model="gpt-4o",
+    system_prompt="You are a data analyst.",
+)
+result = agent.run("Analyze the trends in this dataset")
 ```
 
-### Using LangGraph?
+### Tools
 
-```python
-from agent_os.adapters import LangGraphAdapter
-
-agent = LangGraphAdapter(my_langgraph_app)
-agent.run("Do research")
-# Your LangGraph agent now has AgentOS memory + observability
-```
-
-### Just want the memory engine?
-
-```python
-from agent_os import memory
-
-memory.store("User prefers dark mode", tags=["preferences"])
-results = memory.search("user preferences")
-# Use just the parts you need. No lock-in.
-```
-
----
-
-## 🏗️ Architecture
-
-```
-┌──────────────────────────────────────────────────┐
-│              YOUR APPLICATION                     │
-│  (Personal Assistant, Research AI, Business AI)   │
-└──────────────────┬───────────────────────────────┘
-                   │
-┌──────────────────▼───────────────────────────────┐
-│           YOUR FRAMEWORK (optional)               │
-│  (LangGraph, CrewAI, AutoGen, OpenAI SDK, Raw)   │
-└──────────────────┬───────────────────────────────┘
-                   │
-╔══════════════════▼═══════════════════════════════╗
-║                 AgentOS Runtime                   ║
-╠══════════════════════════════════════════════════╣
-║  🧠 Memory Engine    │  🔧 Tool Runtime          ║
-║  📊 Observability    │  🔐 Permissions            ║
-║  ⏰ Scheduler        │  🔗 Pipeline Engine        ║
-║  💬 EventBus         │  🧩 Plugin System          ║
-║  🗂️ Knowledge Graph  │  📦 Skill System           ║
-║  🏠 Workspaces       │  🔄 Agent Teams            ║
-╚══════════════════════════════════════════════════╝
-```
-
-### Key Design Principles
-
-- **Embedded by default** — No server to start. Import and use. The SDK works in-process.
-- **Zero config** — Sensible defaults for everything. API keys from env vars. Config files are optional.
-- **Progressive complexity** — Simple things are simple. Complex things are possible.
-- **À la carte** — Use the full runtime, or just pick the components you need.
-- **Framework agnostic** — Works with LangGraph, CrewAI, OpenAI SDK, or no framework at all.
-
----
-
-## 📚 Usage Examples
-
-### Custom Tools
+Tools give agents the ability to interact with the outside world. Create custom tools with the `@tool` decorator:
 
 ```python
 from agent_os import Agent, tool
 
 @tool("Search the web for information")
 def web_search(query: str) -> str:
-    # Your search logic here
+    # Your search implementation
     return results
 
 @tool("Read a webpage and extract its content")
 def read_url(url: str) -> str:
-    # Your reading logic here
+    # Your implementation
     return content
 
 agent = Agent("researcher", tools=[web_search, read_url])
-result = agent.run("Find the latest papers on quantum computing")
 ```
 
-### Multi-Agent Teams
+### Memory
+
+Agents automatically persist memory across sessions. You can also use memory directly:
+
+```python
+from agent_os import memory
+
+memory.store("Project deadline is March 15th", tags=["projects", "deadlines"])
+results = memory.search("upcoming deadlines")
+```
+
+### Agent Teams
+
+Multiple agents can collaborate on complex tasks:
 
 ```python
 from agent_os import Agent, Team
 
 researcher = Agent("researcher", role="Research topics thoroughly")
 writer = Agent("writer", role="Write clear, engaging content")
-reviewer = Agent("reviewer", role="Review and improve content")
+reviewer = Agent("reviewer", role="Review and improve quality")
 
 team = Team(
     agents=[researcher, writer, reviewer],
-    strategy="sequential"
+    strategy="sequential",
 )
-
-result = team.run("Create a blog post about AI trends")
+result = team.run("Create a comprehensive report on AI infrastructure")
 ```
 
-### Scheduled Pipelines
+### Pipelines
+
+Define multi-step workflows as directed acyclic graphs:
 
 ```yaml
-# morning-briefing.yaml
+# pipeline.yaml
 name: morning-briefing
 nodes:
   - id: scan_news
@@ -214,84 +164,206 @@ nodes:
 ```python
 from agent_os import Pipeline, Schedule
 
-pipeline = Pipeline.from_yaml("morning-briefing.yaml")
+pipeline = Pipeline.from_yaml("pipeline.yaml")
+
+# Run once
+pipeline.run()
+
+# Or schedule it
 Schedule(pipeline, cron="0 8 * * *")  # Every day at 8 AM
 ```
+
+### Bring Your Own Agent
+
+Already have an existing agent? Add AgentOS infrastructure without rewriting it:
+
+```python
+from agent_os import enhance
+
+# Your existing agent — any Python class
+class MyExistingBot:
+    def run(self, task):
+        return openai.chat.completions.create(...)
+
+bot = enhance(MyExistingBot(), memory=True, observe=True)
+bot.run("Analyze this data")
+# Now it has persistent memory, logging, and metrics
+```
+
+### Framework Adapters
+
+Use AgentOS with your existing framework:
+
+```python
+from agent_os.adapters import LangGraphAdapter
+
+agent = LangGraphAdapter(my_langgraph_app)
+agent.run("Do research")
+# Your LangGraph agent now has AgentOS memory and observability
+```
+
+Adapters are available for OpenAI Agents SDK, LangGraph, and CrewAI.
+
+---
+
+## 🏗️ Architecture
+
+AgentOS is built as a modular runtime with the following core systems:
+
+| System | Purpose |
+|---|---|
+| **Agent Runtime** | Agent lifecycle management, execution, state, and multi-agent team coordination |
+| **Memory Engine** | Persistent storage with full-text search and optional vector/semantic search |
+| **Knowledge Graph** | Structured relationships between entities for contextual understanding |
+| **Tool Runtime** | Extensible tool execution with automatic schema generation and permission enforcement |
+| **Skill System** | Declarative, composable high-level capabilities that bundle tools, prompts, and workflows |
+| **Pipeline Engine** | DAG-based workflow execution with parallel processing, branching, and error handling |
+| **Scheduler** | Cron, interval, and event-based scheduling with execution history |
+| **Event Bus** | Async message-passing system for inter-component and inter-agent communication |
+| **Permissions** | Capability-based security model controlling tool access, memory access, and operations |
+| **Observability** | Structured logging, token usage tracking, latency metrics, and execution history |
+| **Plugin System** | Package-based extensibility for adding new tools, skills, and integrations |
+| **Workspaces** | Isolated environments with independent memory, configuration, and state |
+
+### Design Principles
+
+- **Embedded by default** — The SDK runs in-process. No server, no database setup, no infrastructure to manage.
+- **Zero configuration** — Sensible defaults for everything. Configuration files are optional and only needed for customization.
+- **Progressive complexity** — Simple use cases require simple code. Advanced capabilities are available when needed.
+- **Framework agnostic** — Works with any agent framework or no framework at all.
+- **À la carte** — Use the full runtime or individual components independently.
+- **Local first** — All data stays on your machine by default. No cloud dependency.
 
 ---
 
 ## 🖥️ AgentOS Studio
 
-A desktop application to manage your entire AI infrastructure visually.
+AgentOS Studio is a desktop application for managing your AI infrastructure visually.
 
-- **Dashboard** — Active agents, pipelines, events, resource usage
-- **Agent Manager** — Start, stop, configure, debug agents
-- **Memory Explorer** — Search, browse, and visualize the knowledge graph
-- **Pipeline Editor** — Visual drag-and-drop DAG editor
-- **Plugin Store** — Browse and install integrations
-- **Logs** — Real-time event stream and execution history
+| Module | Description |
+|---|---|
+| **Dashboard** | Active agents, running pipelines, events, and resource usage at a glance |
+| **Agent Manager** | Start, stop, configure, and debug agents with real-time log streaming |
+| **Memory Explorer** | Search, browse, and visualize the knowledge graph |
+| **Pipeline Editor** | Visual drag-and-drop DAG editor with live execution status |
+| **Plugin Store** | Browse and install integrations |
+| **Logs & Observability** | Real-time event stream, execution history, token usage, and performance metrics |
 
-Built with Tauri + SvelteKit. Lightweight, fast, cross-platform.
+Built with Tauri and SvelteKit for a lightweight, fast, cross-platform experience.
 
-> 🚧 Studio is currently under development. Star this repo to follow progress.
-
----
-
-## 🗺️ Roadmap
-
-| Phase | Timeline | Focus |
-|---|---|---|
-| **Phase 1** | Weeks 1–6 | Core runtime, memory, tools, CLI, SDK, minimal Studio. The "60-second agent" experience |
-| **Phase 2** | Weeks 7–12 | Multi-agent teams, pipeline engine, scheduler, plugin system, framework adapters |
-| **Phase 3** | Weeks 13–20 | Registry, community plugins (Gmail, GitHub, Slack), MCP bridge, advanced memory, docs, launch |
-| **Phase 4** | Weeks 21+ | AgentOS Cloud, distributed execution, team collaboration, enterprise features |
-
-See [ROADMAP.md](ROADMAP.md) for the detailed plan.
+```bash
+agentos studio
+```
 
 ---
 
-## 🧩 Ecosystem
+## 🔌 Ecosystem
 
 ### LLM Providers
 
-| Provider | Status |
-|---|---|
-| OpenAI (GPT-4o, o3) | 🟢 Phase 1 |
-| Ollama (local models) | 🟢 Phase 1 |
-| Anthropic (Claude) | 🟡 Phase 2 |
-| Google (Gemini) | 🟡 Phase 2 |
+AgentOS is model-agnostic. Configure your preferred provider:
 
-### Framework Adapters
-
-| Framework | Status |
+| Provider | Package |
 |---|---|
-| Generic Python (`enhance()`) | 🟢 Phase 1 |
-| OpenAI Agents SDK | 🟡 Phase 2 |
-| LangGraph | 🟡 Phase 3 |
-| CrewAI | 🟡 Phase 3 |
+| OpenAI (GPT-4o, o3, o4-mini) | `agent-os-openai` |
+| Anthropic (Claude) | `agent-os-anthropic` |
+| Google (Gemini) | `agent-os-google` |
+| Ollama (Local models) | `agent-os-ollama` |
 
 ### Plugins
 
-| Plugin | Status |
+Extend AgentOS with integrations:
+
+| Plugin | Capabilities |
 |---|---|
-| GitHub | 🟡 Phase 2 |
-| Gmail | 🔵 Phase 3 |
-| Slack | 🔵 Phase 3 |
-| Notion | 🔵 Phase 3 |
-| Calendar | 🔵 Phase 3 |
+| GitHub | Repository management, PR reviews, issue triage, CI status |
+| Gmail | Read, send, search emails; inbox triage; email drafting |
+| Slack | Send/read messages, channel digests, standup summaries |
+| Notion | Page management, search, meeting notes, knowledge sync |
+| Calendar | Events, scheduling, free slot detection, daily agenda |
+
+### MCP Compatibility
+
+AgentOS supports the [Model Context Protocol](https://modelcontextprotocol.io/):
+
+- **Expose** AgentOS tools as MCP servers for use in Claude Desktop, Cursor, and other MCP clients
+- **Consume** external MCP servers as AgentOS tools
+
+---
+
+## 🧑‍💻 SDK Reference
+
+### Quick Reference
+
+```python
+from agent_os import Agent, Team, Pipeline, Schedule
+from agent_os import tool, memory, enhance
+from agent_os import Runtime
+```
+
+| Import | Purpose |
+|---|---|
+| `Agent` | Create and run agents |
+| `Team` | Multi-agent collaboration |
+| `Pipeline` | DAG-based workflows |
+| `Schedule` | Automated scheduling |
+| `tool` | `@tool` decorator for custom tools |
+| `memory` | Direct memory access |
+| `enhance` | Add AgentOS to existing agents |
+| `Runtime` | Advanced runtime configuration |
+
+### Runtime Configuration
+
+For advanced use cases, configure the runtime explicitly:
+
+```python
+from agent_os import Runtime, Agent
+
+runtime = Runtime(
+    workspace="my-project",
+    provider="anthropic",
+    model="claude-sonnet-4",
+    memory_backend="qdrant",
+)
+
+agent = Agent("analyst", runtime=runtime)
+```
+
+### CLI
+
+```bash
+agentos run "Research AI trends"       # One-shot agent
+agentos agent start <name>             # Start a persistent agent
+agentos agent list                     # List running agents
+agentos memory search "query"          # Search memory
+agentos pipeline run pipeline.yaml     # Run a pipeline
+agentos schedule create --cron "..."   # Create a schedule
+agentos studio                         # Open the Studio
+agentos plugin list                    # List installed plugins
+agentos workspace list                 # List workspaces
+```
+
+---
+
+## 📖 Documentation
+
+| Resource | Description |
+|---|---|
+| [Getting Started](docs/getting-started.md) | Installation, first agent, basic concepts |
+| [Core Concepts](docs/core-concepts.md) | Agents, tools, memory, teams, pipelines |
+| [SDK Reference](docs/sdk-reference.md) | Complete API documentation |
+| [CLI Reference](docs/cli-reference.md) | All CLI commands and options |
+| [Plugin Development](docs/plugin-development.md) | How to create and publish plugins |
+| [Architecture Guide](docs/architecture.md) | System design and internals |
+| [API Reference](docs/api-reference.md) | REST and WebSocket API documentation |
 
 ---
 
 ## 🤝 Contributing
 
-AgentOS is building in public and contributions are welcome!
+We welcome contributions of all kinds — bug reports, feature requests, documentation improvements, and code contributions.
 
-- 🌟 **Star this repo** to follow progress
-- 🐛 **Open issues** for bugs or feature requests
-- 💡 **Discussions** for ideas and questions
-- 🔧 **Pull requests** are welcome
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
+Please read our [Contributing Guide](CONTRIBUTING.md) for development setup, coding standards, and the contribution process.
 
 ---
 
@@ -303,10 +375,6 @@ AgentOS is licensed under the [Apache License 2.0](LICENSE).
 
 <div align="center">
 
-**AgentOS is for AI agents what Linux is for software applications.**
-
-Built with ❤️ for the AI community.
-
-[⭐ Star to follow progress](../../stargazers)
+**AgentOS — The foundational infrastructure layer for AI-native applications.**
 
 </div>
