@@ -11,6 +11,8 @@ from agent_fabric.core.workspace import Workspace, validate_workspace_name
 from agent_fabric.memory.engine import memory_engine
 from agent_fabric.runtime.agent import Agent, validate_agent_name
 from agent_fabric.runtime.team import Team
+from agent_fabric.pipelines.dag import Pipeline
+from agent_fabric.pipelines.executor import PipelineExecutor
 
 logger = logging.getLogger("agent_fabric.server.app")
 
@@ -35,6 +37,11 @@ class TeamRunRequest(BaseModel):
     strategy: str = "sequential"
     agents: List[Dict[str, Any]] = Field(default_factory=list)
     supervisor: Optional[Dict[str, Any]] = None
+
+
+class PipelineRunRequest(BaseModel):
+    pipeline: Dict[str, Any]
+    inputs: Dict[str, Any] = Field(default_factory=dict)
 
 
 class MemoryStoreRequest(BaseModel):
@@ -110,6 +117,20 @@ def create_app() -> FastAPI:
         except Exception as e:
             logger.error(f"Error running team {req.team_name}: {e}", exc_info=True)
             raise HTTPException(status_code=500, detail="Internal server error executing team run.")
+
+    @app.post("/pipelines/run")
+    async def run_pipeline(req: PipelineRunRequest):
+        """Execute a DAG workflow pipeline on an input context."""
+        try:
+            pipeline_inst = Pipeline(**req.pipeline)
+            executor = PipelineExecutor(pipeline_inst)
+            run_record = await executor.run(req.inputs)
+            return run_record.model_dump()
+        except ValueError as ve:
+            raise HTTPException(status_code=400, detail=str(ve))
+        except Exception as e:
+            logger.error(f"Error running pipeline: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail="Internal server error executing pipeline run.")
 
     @app.get("/agents/{name}/logs")
     async def get_agent_logs(name: str):

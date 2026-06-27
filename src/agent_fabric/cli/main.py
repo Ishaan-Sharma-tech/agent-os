@@ -13,6 +13,8 @@ from agent_fabric.core.workspace import Workspace, validate_workspace_name
 from agent_fabric.memory.engine import memory_engine
 from agent_fabric.runtime.agent import Agent, validate_agent_name
 from agent_fabric.runtime.team import Team
+from agent_fabric.pipelines.executor import PipelineExecutor
+from agent_fabric.pipelines.yaml import load_pipeline_from_yaml
 
 __all__ = ["app"]
 
@@ -20,12 +22,14 @@ __all__ = ["app"]
 app = typer.Typer(help="AgentFabric: The runtime for AI agents.")
 agent_app = typer.Typer(help="Manage and run AgentFabric agents.")
 team_app = typer.Typer(help="Manage and run multi-agent teams.")
+pipeline_app = typer.Typer(help="Manage and run workflow pipelines.")
 memory_app = typer.Typer(help="Query and inspect memory records.")
 workspace_app = typer.Typer(help="Manage isolated workspaces.")
 server_app = typer.Typer(help="Start and manage the API and WebSocket server.")
 
 app.add_typer(agent_app, name="agent")
 app.add_typer(team_app, name="team")
+app.add_typer(pipeline_app, name="pipeline")
 app.add_typer(memory_app, name="memory")
 app.add_typer(workspace_app, name="workspace")
 app.add_typer(server_app, name="server")
@@ -141,6 +145,28 @@ def team_run(
             Text(res.text, style="cyan"),
             title=f"[bold green]Team '{team.name}' Response[/bold green]",
             border_style="green"
+        ))
+
+    asyncio.run(_async_run())
+
+
+# --- Pipeline Subcommands ---
+@pipeline_app.command(name="run")
+def pipeline_run(
+    config: str = typer.Argument(..., help="Path to YAML pipeline configuration file.")
+):
+    """Execute a DAG workflow pipeline from a YAML configuration file."""
+    async def _async_run():
+        pipeline = load_pipeline_from_yaml(config)
+        executor = PipelineExecutor(pipeline)
+        
+        with console.status(f"[bold green]Executing pipeline '{pipeline.name}'..."):
+            res = await executor.run()
+            
+        console.print(Panel(
+            Text(json.dumps(res.outputs, indent=2, default=str), style="cyan"),
+            title=f"[bold green]Pipeline '{pipeline.name}' Summary ({res.status})[/bold green]",
+            border_style="green" if res.status == "completed" else "red"
         ))
 
     asyncio.run(_async_run())
