@@ -14,6 +14,7 @@ from agent_fabric.runtime.team import Team
 from agent_fabric.pipelines.dag import Pipeline
 from agent_fabric.pipelines.executor import PipelineExecutor
 from agent_fabric.scheduler.scheduler import Schedule, scheduler_engine
+from agent_fabric.plugins.manager import plugin_manager
 
 logger = logging.getLogger("agent_fabric.server.app")
 
@@ -176,6 +177,23 @@ def create_app() -> FastAPI:
         """Retrieve execution history for a schedule."""
         history = scheduler_engine.history_store.get_history(id)
         return [h.model_dump() for h in history]
+
+    @app.get("/plugins")
+    async def list_plugins_endpoint():
+        """List registered plugins and status."""
+        return [p.model_dump() for p in plugin_manager.list_plugins()]
+
+    @app.post("/plugins/{name}/enable")
+    async def enable_plugin_endpoint(name: str):
+        """Enable a registered plugin."""
+        plugin_manager.enable_plugin(name)
+        return {"status": "enabled", "name": name}
+
+    @app.post("/plugins/{name}/disable")
+    async def disable_plugin_endpoint(name: str):
+        """Disable a registered plugin."""
+        plugin_manager.disable_plugin(name)
+        return {"status": "disabled", "name": name}
 
     @app.get("/agents/{name}/logs")
     async def get_agent_logs(name: str):

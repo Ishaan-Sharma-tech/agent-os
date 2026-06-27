@@ -16,6 +16,7 @@ from agent_fabric.runtime.team import Team
 from agent_fabric.pipelines.executor import PipelineExecutor
 from agent_fabric.pipelines.yaml import load_pipeline_from_yaml
 from agent_fabric.scheduler.scheduler import Schedule, scheduler_engine
+from agent_fabric.plugins.manager import plugin_manager
 
 __all__ = ["app"]
 
@@ -25,6 +26,7 @@ agent_app = typer.Typer(help="Manage and run AgentFabric agents.")
 team_app = typer.Typer(help="Manage and run multi-agent teams.")
 pipeline_app = typer.Typer(help="Manage and run workflow pipelines.")
 schedule_app = typer.Typer(help="Manage recurring and event-based schedules.")
+plugin_app = typer.Typer(help="Manage and inspect plugins.")
 memory_app = typer.Typer(help="Query and inspect memory records.")
 workspace_app = typer.Typer(help="Manage isolated workspaces.")
 server_app = typer.Typer(help="Start and manage the API and WebSocket server.")
@@ -33,6 +35,7 @@ app.add_typer(agent_app, name="agent")
 app.add_typer(team_app, name="team")
 app.add_typer(pipeline_app, name="pipeline")
 app.add_typer(schedule_app, name="schedule")
+app.add_typer(plugin_app, name="plugin")
 app.add_typer(memory_app, name="memory")
 app.add_typer(workspace_app, name="workspace")
 app.add_typer(server_app, name="server")
@@ -253,6 +256,63 @@ def schedule_history(
         table.add_row(h.execution_id[:8], f"[{status_style}]{h.status}[/{status_style}]", str(h.trigger_time), out_str[:50])
         
     console.print(table)
+
+
+# --- Plugin Subcommands ---
+@plugin_app.command(name="list")
+def plugin_list():
+    """List registered plugins and their enabled status."""
+    plugins = plugin_manager.list_plugins()
+    if not plugins:
+        console.print("[yellow]No registered plugins found.[/yellow]")
+        return
+        
+    table = Table(title="AgentFabric Plugins")
+    table.add_column("Name", style="bold green")
+    table.add_column("Version", style="dim")
+    table.add_column("Description", style="white")
+    table.add_column("Tools", style="cyan")
+    table.add_column("Enabled", style="yellow")
+    
+    for p in plugins:
+        table.add_row(p.name, p.version, p.description or "", ", ".join(p.tools), "Yes" if p.enabled else "No")
+        
+    console.print(table)
+
+
+@plugin_app.command(name="info")
+def plugin_info(
+    name: str = typer.Argument(..., help="Plugin name.")
+):
+    """View detailed metadata for a plugin."""
+    p = plugin_manager.get_plugin(name)
+    if not p:
+        console.print(f"[red]Plugin '{name}' not found.[/red]")
+        return
+        
+    console.print(Panel(
+        Text(json.dumps(p.model_dump(), indent=2), style="cyan"),
+        title=f"[bold green]Plugin '{p.name}' Info[/bold green]",
+        border_style="green"
+    ))
+
+
+@plugin_app.command(name="enable")
+def plugin_enable(
+    name: str = typer.Argument(..., help="Plugin name.")
+):
+    """Enable a plugin."""
+    plugin_manager.enable_plugin(name)
+    console.print(f"[bold green]Enabled plugin '{name}'.[/bold green]")
+
+
+@plugin_app.command(name="disable")
+def plugin_disable(
+    name: str = typer.Argument(..., help="Plugin name.")
+):
+    """Disable a plugin."""
+    plugin_manager.disable_plugin(name)
+    console.print(f"[bold yellow]Disabled plugin '{name}'.[/bold yellow]")
 
 
 # --- Memory Subcommands ---

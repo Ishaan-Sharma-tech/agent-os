@@ -14,10 +14,12 @@ from agent_fabric.runtime.agent import Agent as Agent
 from agent_fabric.runtime.team import Team as Team
 from agent_fabric.pipelines.dag import Pipeline as Pipeline
 from agent_fabric.scheduler.scheduler import scheduler_engine as scheduler
+from agent_fabric.plugins.manager import plugin_manager as plugins
+import agent_fabric.adapters as adapters
 from agent_fabric.runtime.enhance import enhance as enhance
 from agent_fabric.runtime.runtime import Runtime as Runtime
 
-__all__ = ["tool", "tool_registry", "memory", "graph", "Agent", "Team", "Pipeline", "scheduler", "enhance", "Runtime", "run"]
+__all__ = ["tool", "tool_registry", "memory", "graph", "Agent", "Team", "Pipeline", "scheduler", "plugins", "adapters", "enhance", "Runtime", "run"]
 
 
 def run(task: str, **kwargs) -> Any:
