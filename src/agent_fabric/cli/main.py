@@ -18,6 +18,7 @@ from agent_fabric.pipelines.yaml import load_pipeline_from_yaml
 from agent_fabric.scheduler.scheduler import Schedule, scheduler_engine
 from agent_fabric.plugins.manager import plugin_manager
 from agent_fabric.registry import registry_catalog, install_package, update_packages, scaffold_plugin, PackageMetadata
+from agent_fabric.mcp import mcp_manager, MCPServer
 
 __all__ = ["app"]
 
@@ -29,6 +30,7 @@ pipeline_app = typer.Typer(help="Manage and run workflow pipelines.")
 schedule_app = typer.Typer(help="Manage recurring and event-based schedules.")
 plugin_app = typer.Typer(help="Manage and inspect plugins.")
 registry_app = typer.Typer(help="Search, install, publish, and update packages.")
+mcp_app = typer.Typer(help="Manage Model Context Protocol (MCP) bridges.")
 memory_app = typer.Typer(help="Query and inspect memory records.")
 workspace_app = typer.Typer(help="Manage isolated workspaces.")
 server_app = typer.Typer(help="Start and manage the API and WebSocket server.")
@@ -39,6 +41,7 @@ app.add_typer(pipeline_app, name="pipeline")
 app.add_typer(schedule_app, name="schedule")
 app.add_typer(plugin_app, name="plugin")
 app.add_typer(registry_app, name="registry")
+app.add_typer(mcp_app, name="mcp")
 app.add_typer(memory_app, name="memory")
 app.add_typer(workspace_app, name="workspace")
 app.add_typer(server_app, name="server")
@@ -387,6 +390,41 @@ def init_cmd(
             console.print(f"[bold green]{res}[/bold green]")
     else:
         console.print(f"[red]Unsupported init target type: '{target_type}'. Supported: plugin[/red]")
+
+
+# --- MCP Subcommands ---
+@mcp_app.command(name="list")
+def mcp_list():
+    """List connected external MCP servers."""
+    servers = mcp_manager.list_connected()
+    if not servers:
+        console.print("[yellow]No active connected MCP servers.[/yellow]")
+        return
+        
+    table = Table(title="Connected MCP Servers")
+    table.add_column("Server URL", style="bold green")
+    table.add_column("Status", style="cyan")
+    
+    for s in servers:
+        table.add_row(s, "Connected")
+        
+    console.print(table)
+
+
+@mcp_app.command(name="connect")
+def mcp_connect(
+    url: str = typer.Argument(..., help="External MCP server URL.")
+):
+    """Connect to an external MCP server."""
+    mcp_manager.connect_server(url)
+    console.print(f"[bold green]Connected to MCP server at '{url}'.[/bold green]")
+
+
+@mcp_app.command(name="serve")
+def mcp_serve():
+    """Start an MCP server exposing AgentFabric tools over JSON-RPC."""
+    server = MCPServer()
+    console.print(f"[bold green]Started MCP Server '{server.server_name}' exposing {len(server.list_tools())} tools.[/bold green]")
 
 
 # --- Memory Subcommands ---
